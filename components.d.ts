@@ -10,10 +10,7 @@ declare module 'vue' {
     Button: typeof import('primevue/button')['default']
     Dialog: typeof import('primevue/dialog')['default']
     FileUpload: typeof import('primevue/fileupload')['default']
-    HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     InputNumber: typeof import('primevue/inputnumber')['default']
     Menubar: typeof import('primevue/menubar')['default']
-    Select: typeof import('primevue/select')['default']
-    ToggleButton: typeof import('primevue/togglebutton')['default']
   }
 }
