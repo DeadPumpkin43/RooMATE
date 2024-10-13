@@ -10,8 +10,13 @@
   },
   "dependencies": {
     "@primevue/themes": "^4.0.7",
+    "danfojs": "^1.1.2",
     "papaparse": "^5.4.1",
+    "pinia": "^2.2.4",
     "primeicons": "^7.0.0",
+    "primevue": "^4.1.0",
+    "random": "^5.1.1",
+    "vite-plugin-vue-devtools": "^7.4.6",
     "vue": "^3.4.37"
   },
   "devDependencies": {
