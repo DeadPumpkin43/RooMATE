@@ -339,7 +339,7 @@ function startChooser() {
                 { length: peoplePerRoom.value + 1 },
                 (_, i) => i + 1,
             ).forEach((a) => {
-                values[i][a] = ref(null);
+                values[i][a] = null;
             });
         });
         console.log(values);
