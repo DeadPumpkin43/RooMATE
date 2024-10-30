@@ -343,14 +343,26 @@ function startChooser() {
                 { length: peoplePerRoom.value + 1 },
                 (_, i) => i + 1,
             ).forEach((a) => {
+                console.log(preSelectRooms.value);
                 if(!preSelectRooms.value){
+                    console.log("Cancel1")
                     values[i][a] = null;
                     return;
                 }
-                if(preChosenCols[i][a] == null){
+                if(preChosenCols.value[a -1] == null){
+                    console.log("Cancel2")
                     values[i][a] = null;
+                    return;
                 }
-                
+                var choiceFromPers = personArray.map((B) => B.name).indexOf(ParseRes.data.map((b)=> b[preChosenCols.value[a -1]])[i]);
+                console.log(choiceFromPers);
+                if(choiceFromPers == -1){
+                    console.log("Cancel3")
+                    values[i][a] = null;
+                    return;
+                }
+                values[i][a] = choiceFromPers;
+
             });
         });
         console.log(values);
