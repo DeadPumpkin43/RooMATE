@@ -336,6 +336,8 @@ function startChooser() {
                 personData["split"] = `${e[colSplitOps.value]}`;
             }
             personArray.push(personData);
+        });
+        ParseRes.data.forEach((e: any, i: number) => {
             values[i] = {};
             Array.from(
                 { length: peoplePerRoom.value + 1 },
