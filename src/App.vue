@@ -6,6 +6,7 @@ import * as dfd from "danfojs/dist/danfojs-browser/src";
 import random from "random";
 import { toRaw, ref, reactive, watch } from "vue";
 import { PrimeIcons } from "@primevue/core/api";
+const preSelectRooms = ref(false);
 const navItems = ref([
     {
         label: "Github",
@@ -34,6 +35,7 @@ var lastChoice = ref();
 var colSplitOps = ref();
 var peoplePerRoom = ref(Number(localStorage.getItem("peoplePerRoom")));
 var ParseRes;
+var preChosenCols = reactive({value:[]});
 interface panelOptions {
     name: string;
     id: number;
@@ -334,12 +336,33 @@ function startChooser() {
                 personData["split"] = `${e[colSplitOps.value]}`;
             }
             personArray.push(personData);
+        });
+        ParseRes.data.forEach((e: any, i: number) => {
             values[i] = {};
             Array.from(
                 { length: peoplePerRoom.value + 1 },
                 (_, i) => i + 1,
             ).forEach((a) => {
-                values[i][a] = null;
+                console.log(preSelectRooms.value);
+                if(!preSelectRooms.value){
+                    console.log("Cancel1")
+                    values[i][a] = null;
+                    return;
+                }
+                if(preChosenCols.value[a -1] == null){
+                    console.log("Cancel2")
+                    values[i][a] = null;
+                    return;
+                }
+                var choiceFromPers = personArray.map((B) => B.name).indexOf(ParseRes.data.map((b)=> b[preChosenCols.value[a -1]])[i]);
+                console.log(choiceFromPers);
+                if(choiceFromPers == -1){
+                    console.log("Cancel3")
+                    values[i][a] = null;
+                    return;
+                }
+                values[i][a] = choiceFromPers;
+
             });
         });
         console.log(values);
@@ -382,6 +405,7 @@ watch(personArray, (state) => {
 });
 watch(peoplePerRoom, (state) => {
     localStorage.setItem("peoplePerRoom", peoplePerRoom.value);
+    preChosenCols.value = new Array(peoplePerRoom.value + 1).fill(null);
 });
 watch(values, (state) => {
     localStorage.setItem("values", JSON.stringify(state));
@@ -434,6 +458,14 @@ watch(values, (state) => {
             :min="2"
             placeholder="People Per Room*"
         />
+
+        <div><Checkbox v-model="preSelectRooms" binary></Checkbox><label>Rooms Already Chosen</label></div>
+        <Panel v-if="preSelectRooms" header="Columns for Choices">
+            <Select v-for="(c,i) in preChosenCols.value" :options="colOps" v-model="preChosenCols.value[i]" :placeholder="`Choice ${i+1}`">
+
+                
+            </Select>
+        </Panel>
         <Button label="Start " @click="startChooser" />
     </Dialog>
     <Panel v-for="panel in panelDisplay" :header="panel.name">
