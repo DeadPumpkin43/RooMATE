@@ -35,7 +35,7 @@ var lastChoice = ref();
 var colSplitOps = ref();
 var peoplePerRoom = ref(Number(localStorage.getItem("peoplePerRoom")));
 var ParseRes;
-var preChosenCols = reactive({value:[]});
+var preChosenCols = reactive({ value: [] });
 interface panelOptions {
     name: string;
     id: number;
@@ -246,6 +246,7 @@ function onSubmit() {
                 columns: rooms,
             });
             peopleUsed.forEach((person) => {
+                var newIndexes = tempTable["Index"].values;
                 tempTable.print();
                 partnerFrame.print();
                 var values = partnerFrame.loc({
@@ -264,22 +265,29 @@ function onSubmit() {
                 var actualRoomIndex = rooms.indexOf(
                     partnerFrame.columns[potentialCanidates],
                 );
-                /*if(partnerFrame.index.includes(person))*/partnerFrame.drop({
+                /*if(partnerFrame.index.includes(person))*/ partnerFrame.drop({
                     inplace: true,
                     index: [person],
                 });
-                /*if(partnerFrame.index.includes(partnerFrame.columns[potentialCanidates]))*/partnerFrame.drop({
-                    inplace: true,
-                    columns: [partnerFrame.columns[potentialCanidates]],
-                });
+                /*if(partnerFrame.index.includes(partnerFrame.columns[potentialCanidates]))*/ partnerFrame.drop(
+                    {
+                        inplace: true,
+                        columns: [partnerFrame.columns[potentialCanidates]],
+                    },
+                );
+                console.log(index);
                 console.log(person);
-                console.log(index.indexOf(person))
+                console.log(index.indexOf(person));
                 tempTable.print();
-                /*if(partnerFrame.index.includes(index.indexOf(person)))*/tempTable.drop({
-                    inplace: true,
-                    index: [index.indexOf(person)],
-                });
-
+                /*if(partnerFrame.index.includes(index.indexOf(person)))*/ tempTable.drop(
+                    {
+                        inplace: true,
+                        index: [newIndexes.indexOf(person)],
+                    },
+                );
+                if (tempTable.shape[0] > 0) {
+                    tempTable.resetIndex({ inplace: true });
+                }
                 rooms[actualRoomIndex].push(person);
                 console.log(rooms[actualRoomIndex]);
             });
@@ -347,25 +355,30 @@ function startChooser() {
                 (_, i) => i + 1,
             ).forEach((a) => {
                 console.log(preSelectRooms.value);
-                if(!preSelectRooms.value){
-                    console.log("Cancel1")
+                if (!preSelectRooms.value) {
+                    console.log("Cancel1");
                     values[i][a] = null;
                     return;
                 }
-                if(preChosenCols.value[a -1] == null){
-                    console.log("Cancel2")
+                if (preChosenCols.value[a - 1] == null) {
+                    console.log("Cancel2");
                     values[i][a] = null;
                     return;
                 }
-                var choiceFromPers = personArray.map((B) => B.name).indexOf(ParseRes.data.map((b)=> b[preChosenCols.value[a -1]])[i]);
+                var choiceFromPers = personArray
+                    .map((B) => B.name)
+                    .indexOf(
+                        ParseRes.data.map((b) => b[preChosenCols.value[a - 1]])[
+                            i
+                        ],
+                    );
                 console.log(choiceFromPers);
-                if(choiceFromPers == -1){
-                    console.log("Cancel3")
+                if (choiceFromPers == -1) {
+                    console.log("Cancel3");
                     values[i][a] = null;
                     return;
                 }
                 values[i][a] = choiceFromPers;
-
             });
         });
         console.log(values);
@@ -462,11 +475,17 @@ watch(values, (state) => {
             placeholder="People Per Room*"
         />
 
-        <div><Checkbox v-model="preSelectRooms" binary></Checkbox><label>Rooms Already Chosen</label></div>
+        <div>
+            <Checkbox v-model="preSelectRooms" binary></Checkbox
+            ><label>Rooms Already Chosen</label>
+        </div>
         <Panel v-if="preSelectRooms" header="Columns for Choices">
-            <Select v-for="(c,i) in preChosenCols.value" :options="colOps" v-model="preChosenCols.value[i]" :placeholder="`Choice ${i+1}`">
-
-                
+            <Select
+                v-for="(c, i) in preChosenCols.value"
+                :options="colOps"
+                v-model="preChosenCols.value[i]"
+                :placeholder="`Choice ${i + 1}`"
+            >
             </Select>
         </Panel>
         <Button label="Start " @click="startChooser" />
