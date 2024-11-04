@@ -264,15 +264,18 @@ function onSubmit() {
                 var actualRoomIndex = rooms.indexOf(
                     partnerFrame.columns[potentialCanidates],
                 );
-                partnerFrame.drop({
+                /*if(partnerFrame.index.includes(person))*/partnerFrame.drop({
                     inplace: true,
                     index: [person],
                 });
-                partnerFrame.drop({
+                /*if(partnerFrame.index.includes(partnerFrame.columns[potentialCanidates]))*/partnerFrame.drop({
                     inplace: true,
                     columns: [partnerFrame.columns[potentialCanidates]],
                 });
-                tempTable.drop({
+                console.log(person);
+                console.log(index.indexOf(person))
+                tempTable.print();
+                /*if(partnerFrame.index.includes(index.indexOf(person)))*/tempTable.drop({
                     inplace: true,
                     index: [index.indexOf(person)],
                 });
