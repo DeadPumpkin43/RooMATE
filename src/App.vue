@@ -234,7 +234,7 @@ function onSubmit() {
                                 columns: choiceCols,
                             })
                             .values[0].includes(person2)
-                            ? 0.5
+                            ? 1
                             : 0;
                     });
                     valArray.push(value);
@@ -252,12 +252,48 @@ function onSubmit() {
                 var values = partnerFrame.loc({
                     rows: [person],
                 }).values[0];
+                var personAddonChoices = peopleTable.loc({
+                    rows: [person],
+                    columns: choiceCols,
+                }).values[0];
                 var potentialCanidates = maxIndices(values);
                 if (potentialCanidates.length > 1) {
-                    potentialCanidates =
+                    var newCanidates = potentialCanidates.map(
+                        (a) => rooms[rooms.indexOf(partnerFrame.columns[a])],
+                    );
+                    var candidateValues = [];
+                    newCanidates.forEach((arr) => {
+                        var v = 0;
+                        arr.forEach((canidate) => {
+                            var othersSelection = peopleTable.loc({
+                                rows: [canidate],
+                                columns: choiceCols,
+                            }).values[0];
+
+                            othersSelection.forEach((choice) => {
+                                v += personAddonChoices.includes(choice)
+                                    ? 1
+                                    : 0;
+                            });
+                        });
+                        candidateValues.push(v);
+                    });
+                    candidateValues = maxIndices(candidateValues);
+
+                    if (candidateValues.length > 1) {
+                        candidateValues =
+                            candidateValues[
+                                random.int(0, candidateValues.length - 1)
+                            ];
+                    } else {
+                        candidateValues = candidateValues[0];
+                    }
+                    potentialCanidates = potentialCanidates[candidateValues];
+
+                    /*potentialCanidates =
                         potentialCanidates[
-                            random.int(0, potentialCanidates.length - 1)
-                        ];
+
+                        ];*/
                 } else {
                     potentialCanidates = potentialCanidates[0];
                 }
