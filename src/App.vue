@@ -205,8 +205,100 @@ function onSubmit() {
         }
         console.log(rooms);
 
+        var pushNum = 1;
+        var indexesTemp = tempTable.index;
+        for (var n = 0; n < tempTable.index.length; n++) {
+            console.log(indexesTemp);
+            console.log(`index:${n}`);
+            var person = indexesTemp[n];
+            console.log(`person:${person}`);
+            var personTrueIndex = tempTable.loc({
+                rows: [person],
+                columns: ["Index"],
+            }).values[0][0];
+            console.log(personTrueIndex);
+            var personChoices = tempTable.loc({
+                rows: [person],
+                columns: choiceCols,
+            }).values[0];
+            /*var usableRooms = rooms.filter(
+            (l) =>
+                l.some((q) => personChoices.includes(q)) &&
+                l.length < peoplePerRoom,
+        );*/
+            var usableRooms = rooms.filter((l) => {
+                if (l.length >= peoplePerRoom.value) {
+                    //console.log("CancelLength");
+                    return false;
+                }
+                if (
+                    l.some((q) => {
+                        if (personChoices.includes(q)) {
+                            return true;
+                        }
+                        //console.log("CancelNotInChoice");
+                        return false;
+                    })
+                ) {
+                    //console.log("went well");
+                    return true;
+                }
+                //console.log("CancelNotInChoice2");
+                return false;
+            });
+            console.log(usableRooms);
+            if (usableRooms.length < 1) {
+                /*indexesTemp[n],
+              (indexesTemp[n + 1] = indexesTemp[n + 1]),
+              indexesTemp[n];*/
+                var tempId = indexesTemp[n + pushNum];
+                indexesTemp[n + pushNum] = indexesTemp[n];
+                indexesTemp[n] = tempId;
+                n -= 1;
+                pushNum++;
+                continue;
+            }
+            var usableRoomsValues = usableRooms.map((l) => {
+                var v = 0;
+                l.forEach((q) => {
+                    var otherChoices = peopleTable.loc({
+                        rows: [q],
+                        columns: choiceCols,
+                    }).values[0];
+                    v += otherChoices.includes(personTrueIndex) ? 1 : 0;
+                    v += personChoices.includes(q) ? 1 : 0;
+                });
+                return v;
+            });
+
+            console.log(usableRoomsValues);
+            var canidate = maxIndices(usableRoomsValues);
+            canidate = canidate[random.int(0, canidate.length - 1)];
+            console.log(rooms);
+            //console.log(usableRooms);
+
+            var roomIndex = rooms.indexOf(usableRooms[canidate]);
+            console.log(
+                `roomIndex:${roomIndex}, canidate:${canidate}, person:${person}`,
+            );
+            rooms[roomIndex].push(personTrueIndex);
+            tempTable.drop({
+                index: [person],
+                inplace: true,
+            });
+            pushNum = 1;
+        }
+
         finalRooms = finalRooms.concat(rooms);
     });
+    console.log(
+        finalRooms
+            .map((a) => a.length)
+            .reduce((a, b) => {
+                return a + b;
+            }),
+    );
+
     console.log(finalRooms);
     var download = URL.createObjectURL(
         new Blob(
