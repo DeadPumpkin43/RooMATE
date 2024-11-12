@@ -8,25 +8,25 @@ import { toRaw, ref, reactive, watch } from "vue";
 import { PrimeIcons } from "@primevue/core/api";
 const preSelectRooms = ref(false);
 const navItems = ref([
-    {
-        label: "Github",
-        icon: PrimeIcons.GITHUB,
-        url: "https://github.com/DeadPumpkin43",
-    },
-    { label: "Clear", icon: PrimeIcons.ERASER, command: onClear },
+  {
+    label: "Github",
+    icon: PrimeIcons.GITHUB,
+    url: "https://github.com/DeadPumpkin43",
+  },
+  { label: "Clear", icon: PrimeIcons.ERASER, command: onClear },
 ]);
 function maxIndices(arr: number[]) {
-    if (arr.length === 0) {
-        return [];
-    }
+  if (arr.length === 0) {
+    return [];
+  }
 
-    const maxValue = Math.max(...arr);
-    return arr.reduce((indices, value, index) => {
-        if (value === maxValue) {
-            indices.push(index);
-        }
-        return indices;
-    }, []);
+  const maxValue = Math.max(...arr);
+  return arr.reduce((indices, value, index) => {
+    if (value === maxValue) {
+      indices.push(index);
+    }
+    return indices;
+  }, []);
 }
 var PopupVisible = ref(false);
 var colOps = ref([]);
@@ -37,472 +37,467 @@ var peoplePerRoom = ref(Number(localStorage.getItem("peoplePerRoom")));
 var ParseRes;
 var preChosenCols = reactive({ value: [] });
 interface panelOptions {
-    name: string;
-    id: number;
-    options: { name: string; id: number }[];
-    refOptions: ref;
+  name: string;
+  id: number;
+  options: { name: string; id: number }[];
+  refOptions: ref;
 }
 var panelDisplay =
-    localStorage.getItem("panelDisplay") != null
-        ? ref<panelOptions[]>(JSON.parse(localStorage.getItem("panelDisplay")))
-        : ref<panelOptions[]>([]);
+  localStorage.getItem("panelDisplay") != null
+    ? ref<panelOptions[]>(JSON.parse(localStorage.getItem("panelDisplay")))
+    : ref<panelOptions[]>([]);
 function onClear() {
-    Object.assign(values, []);
-    panelDisplay.value = [];
+  Object.assign(values, []);
+  panelDisplay.value = [];
 
-    console.log(panelDisplay);
+  console.log(panelDisplay);
 }
 function onSave() {}
 function onFileSelect(event) {
-    const file = event.files[0];
-    const reader = new FileReader();
+  const file = event.files[0];
+  const reader = new FileReader();
 
-    reader.onload = async (e) => {
-        console.log(e.target.result);
-        ParseRes = Papa.parse(e.target.result, {
-            header: true,
-        });
-        firstChoice.value = null;
-        lastChoice.value = null;
-        peoplePerRoom.value = null;
-        colSplitOps.value = null;
-        console.log(ParseRes);
-        colOps.value = ParseRes.meta.fields;
-        PopupVisible.value = true;
-    };
+  reader.onload = async (e) => {
+    console.log(e.target.result);
+    ParseRes = Papa.parse(e.target.result, {
+      header: true,
+    });
+    firstChoice.value = null;
+    lastChoice.value = null;
+    peoplePerRoom.value = null;
+    colSplitOps.value = null;
+    console.log(ParseRes);
+    colOps.value = ParseRes.meta.fields;
+    PopupVisible.value = true;
+  };
 
-    reader.readAsText(file);
+  reader.readAsText(file);
 }
 
 var personArray =
-    localStorage.getItem("personArray") != null
-        ? reactive(JSON.parse(localStorage.getItem("personArray")))
-        : reactive([]);
+  localStorage.getItem("personArray") != null
+    ? reactive(JSON.parse(localStorage.getItem("personArray")))
+    : reactive([]);
 const values =
-    localStorage.getItem("values") != null
-        ? reactive(JSON.parse(localStorage.getItem("values")))
-        : reactive({});
+  localStorage.getItem("values") != null
+    ? reactive(JSON.parse(localStorage.getItem("values")))
+    : reactive({});
 function onSubmit() {
-    var finalRooms = [];
-    var dataArray = personArray.map((e) => {
-        var returnArr = [e.name, e.id];
-        console.log(toRaw(values[e.id]));
-        returnArr = returnArr.concat(
-            Object.entries(toRaw(values[e.id])).map((a) => {
-                console.log(a[1]);
-                return a[1] != null ? a[1] : null;
-            }),
-        );
-
-        return returnArr;
-    });
-    var columnLabels = ["Name", "Index"];
-    columnLabels = columnLabels.concat(
-        Array.from({ length: peoplePerRoom.value + 1 }, (_, i) => i + 1),
+  var finalRooms = [];
+  var dataArray = personArray.map((e) => {
+    var returnArr = [e.name, e.id];
+    console.log(toRaw(values[e.id]));
+    returnArr = returnArr.concat(
+      Object.entries(toRaw(values[e.id])).map((a) => {
+        console.log(a[1]);
+        return a[1] != null ? a[1] : null;
+      })
     );
-    console.log(columnLabels);
-    console.log(dataArray);
-    var peopleTable = new dfd.DataFrame(dataArray, {
-        columns: columnLabels,
-        config: {
-            tableMaxRow: 100,
-        },
+
+    return returnArr;
+  });
+  var columnLabels = ["Name", "Index"];
+  columnLabels = columnLabels.concat(
+    Array.from({ length: peoplePerRoom.value + 1 }, (_, i) => i + 1)
+  );
+  console.log(columnLabels);
+  console.log(dataArray);
+  var peopleTable = new dfd.DataFrame(dataArray, {
+    columns: columnLabels,
+    config: {
+      tableMaxRow: 100,
+    },
+  });
+  peopleTable.print();
+  var tempTableArr: dfd.DataFrame[] = [];
+  if (personArray[0]["split"] != null) {
+    var uniqueSplits = [...new Set(personArray.map((a) => a.split))];
+    uniqueSplits.forEach((split) => {
+      var affectedIds = personArray
+        .filter((a) => a.split == split)
+        .map((a) => a.id);
+      var newTable = peopleTable.loc({
+        rows: affectedIds,
+      });
+      newTable.resetIndex({
+        inplace: true,
+      });
+      tempTableArr.push(newTable);
     });
-    peopleTable.print();
-    var tempTableArr: dfd.DataFrame[] = [];
-    if (personArray[0]["split"] != null) {
-        var uniqueSplits = [...new Set(personArray.map((a) => a.split))];
-        uniqueSplits.forEach((split) => {
-            var affectedIds = personArray
-                .filter((a) => a.split == split)
-                .map((a) => a.id);
-            var newTable = peopleTable.loc({
-                rows: affectedIds,
-            });
-            newTable.resetIndex({
-                inplace: true,
-            });
-            tempTableArr.push(newTable);
-        });
-    } else {
-        tempTableArr.push(peopleTable.copy());
-    }
-    tempTableArr.forEach((tempTable) => {
-        var roomAmount = Math.ceil(tempTable.shape[0] / peoplePerRoom.value);
-        var choiceCols = Array.from(
-            { length: peoplePerRoom.value + 1 },
-            (_, i) => i + 1,
-        );
+  } else {
+    tempTableArr.push(peopleTable.copy());
+  }
+  tempTableArr.forEach((tempTable) => {
+    var roomAmount = Math.ceil(tempTable.shape[0] / peoplePerRoom.value);
+    var choiceCols = Array.from(
+      { length: peoplePerRoom.value + 1 },
+      (_, i) => i + 1
+    );
 
-        var rooms = [];
-        console.log(roomAmount);
-        for (var i = 0; i < roomAmount; i++) {
-            var chosenPerson = random.int(0, tempTable.shape[0] - 1);
+    var rooms = [];
+    console.log(roomAmount);
+    for (var i = 0; i < roomAmount; i++) {
+      var chosenPerson = random.int(0, tempTable.shape[0] - 1);
 
-            var peopleIndex = tempTable["Index"].values;
-            var chosenIndex = peopleIndex[chosenPerson];
-            var chosenPersonsChoices = tempTable.loc({
-                rows: [chosenPerson],
-                columns: choiceCols,
-            }).values[0];
-            console.log(chosenPersonsChoices);
-            var doubleSelected = [];
-            chosenPersonsChoices.forEach((choice) => {
-                var choiceTempIndex = peopleIndex.findIndex((a) => a == choice);
-                if (choiceTempIndex == -1) {
-                    return;
-                }
-                if (
-                    tempTable
-                        .loc({ rows: [choiceTempIndex], columns: choiceCols })
-                        .values[0].includes(chosenIndex)
-                ) {
-                    doubleSelected.push(choiceTempIndex);
-                }
-            });
-            if (doubleSelected.length <= 0) {
-                i--;
-                continue;
-            }
-            var countInCommon = [];
-
-            doubleSelected.forEach((person) => {
-                var othersSelection = tempTable.loc({
-                    rows: [person],
-                    columns: choiceCols,
-                }).values[0];
-                var inComm = 0;
-                othersSelection.forEach((choice) => {
-                    inComm += chosenPersonsChoices.includes(choice) ? 1 : 0;
-                });
-                countInCommon.push(inComm);
-            });
-
-            var pairCanidates = maxIndices(countInCommon);
-            console.log(
-                `doubleSelected:${doubleSelected}, pairCanidate:${pairCanidates},choices:${chosenPerson}`,
-            );
-            if (pairCanidates.length > 1) {
-                pairCanidates =
-                    pairCanidates[random.int(0, pairCanidates.length - 1)];
-            } else {
-                pairCanidates = pairCanidates[0];
-            }
-            var pairMate = peopleIndex[doubleSelected[pairCanidates]];
-            tempTable.drop({
-                index: [chosenPerson, doubleSelected[pairCanidates]],
-                inplace: true,
-            });
-            tempTable.print();
-            if (tempTable.shape[0] > 0) {
-                tempTable.resetIndex({
-                    inplace: true,
-                });
-            }
-
-            rooms.push([chosenIndex, pairMate]);
-            console.log([chosenIndex, pairMate]);
+      var peopleIndex = tempTable["Index"].values;
+      var chosenIndex = peopleIndex[chosenPerson];
+      var chosenPersonsChoices = tempTable.loc({
+        rows: [chosenPerson],
+        columns: choiceCols,
+      }).values[0];
+      console.log(chosenPersonsChoices);
+      var doubleSelected = [];
+      chosenPersonsChoices.forEach((choice) => {
+        var choiceTempIndex = peopleIndex.findIndex((a) => a == choice);
+        if (choiceTempIndex == -1) {
+          return;
         }
-        console.log(rooms);
+        if (
+          tempTable
+            .loc({ rows: [choiceTempIndex], columns: choiceCols })
+            .values[0].includes(chosenIndex)
+        ) {
+          doubleSelected.push(choiceTempIndex);
+        }
+      });
+      if (doubleSelected.length <= 0) {
+        i--;
+        continue;
+      }
+      var countInCommon = [];
 
-        var pushNum = 1;
-        var indexesTemp = tempTable.index;
-        for (var n = 0; n < tempTable.index.length; n++) {
-            console.log(indexesTemp);
-            console.log(`index:${n}`);
-            var person = indexesTemp[n];
-            console.log(`person:${person}`);
-            var personTrueIndex = tempTable.loc({
-                rows: [person],
-                columns: ["Index"],
-            }).values[0][0];
-            console.log(personTrueIndex);
-            var personChoices = tempTable.loc({
-                rows: [person],
-                columns: choiceCols,
-            }).values[0];
-            /*var usableRooms = rooms.filter(
+      doubleSelected.forEach((person) => {
+        var othersSelection = tempTable.loc({
+          rows: [person],
+          columns: choiceCols,
+        }).values[0];
+        var inComm = 0;
+        othersSelection.forEach((choice) => {
+          inComm += chosenPersonsChoices.includes(choice) ? 1 : 0;
+        });
+        countInCommon.push(inComm);
+      });
+
+      var pairCanidates = maxIndices(countInCommon);
+      console.log(
+        `doubleSelected:${doubleSelected}, pairCanidate:${pairCanidates},choices:${chosenPerson}`
+      );
+      if (pairCanidates.length > 1) {
+        pairCanidates = pairCanidates[random.int(0, pairCanidates.length - 1)];
+      } else {
+        pairCanidates = pairCanidates[0];
+      }
+      var pairMate = peopleIndex[doubleSelected[pairCanidates]];
+      tempTable.drop({
+        index: [chosenPerson, doubleSelected[pairCanidates]],
+        inplace: true,
+      });
+      tempTable.print();
+      if (tempTable.shape[0] > 0) {
+        tempTable.resetIndex({
+          inplace: true,
+        });
+      }
+
+      rooms.push([chosenIndex, pairMate]);
+      console.log([chosenIndex, pairMate]);
+    }
+    console.log(rooms);
+    tempTable.resetIndex({
+      inplace: true,
+    });
+    var pushNum = 1;
+    var indexesTemp = tempTable.index;
+    var lengthPerm = tempTable.index.length;
+    console.log(tempTable.index);
+    console.log("Starting index up");
+    for (var n = 0; n < lengthPerm; n++) {
+      console.log(indexesTemp);
+      console.log(`index:${n}`);
+      var person = indexesTemp[n];
+      console.log(`person:${person}`);
+      var personTrueIndex = tempTable.loc({
+        rows: [person],
+        columns: ["Index"],
+      }).values[0][0];
+      console.log(personTrueIndex);
+      var personChoices = tempTable.loc({
+        rows: [person],
+        columns: choiceCols,
+      }).values[0];
+      /*var usableRooms = rooms.filter(
             (l) =>
                 l.some((q) => personChoices.includes(q)) &&
                 l.length < peoplePerRoom,
         );*/
-            var usableRooms = rooms.filter((l) => {
-                if (l.length >= peoplePerRoom.value) {
-                    //console.log("CancelLength");
-                    return false;
-                }
-                if (
-                    l.some((q) => {
-                        if (personChoices.includes(q)) {
-                            return true;
-                        }
-                        //console.log("CancelNotInChoice");
-                        return false;
-                    })
-                ) {
-                    //console.log("went well");
-                    return true;
-                }
-                //console.log("CancelNotInChoice2");
-                return false;
-            });
-            console.log(usableRooms);
-            if (usableRooms.length < 1) {
-                /*indexesTemp[n],
+      var usableRooms = rooms.filter((l) => {
+        if (l.length >= peoplePerRoom.value) {
+          //console.log("CancelLength");
+          return false;
+        }
+        if (
+          l.some((q) => {
+            if (personChoices.includes(q)) {
+              return true;
+            }
+            //console.log("CancelNotInChoice");
+            return false;
+          })
+        ) {
+          //console.log("went well");
+          return true;
+        }
+        //console.log("CancelNotInChoice2");
+        return false;
+      });
+      console.log(usableRooms);
+      if (usableRooms.length < 1) {
+        /*indexesTemp[n],
               (indexesTemp[n + 1] = indexesTemp[n + 1]),
               indexesTemp[n];*/
-                var tempId = indexesTemp[n + pushNum];
-                indexesTemp[n + pushNum] = indexesTemp[n];
-                indexesTemp[n] = tempId;
-                n -= 1;
-                pushNum++;
-                continue;
-            }
-            var usableRoomsValues = usableRooms.map((l) => {
-                var v = 0;
-                l.forEach((q) => {
-                    var otherChoices = peopleTable.loc({
-                        rows: [q],
-                        columns: choiceCols,
-                    }).values[0];
-                    v += otherChoices.includes(personTrueIndex) ? 1 : 0;
-                    v += personChoices.includes(q) ? 1 : 0;
-                });
-                return v;
-            });
+        var tempId = indexesTemp[n + pushNum];
+        indexesTemp[n + pushNum] = indexesTemp[n];
+        indexesTemp[n] = tempId;
+        n -= 1;
+        pushNum++;
+        continue;
+      }
+      var usableRoomsValues = usableRooms.map((l) => {
+        var v = 0;
+        l.forEach((q) => {
+          var otherChoices = peopleTable.loc({
+            rows: [q],
+            columns: choiceCols,
+          }).values[0];
+          v += otherChoices.includes(personTrueIndex) ? 1 : 0;
+          v += personChoices.includes(q) ? 1 : 0;
+        });
+        return v;
+      });
 
-            console.log(usableRoomsValues);
-            var canidate = maxIndices(usableRoomsValues);
-            canidate = canidate[random.int(0, canidate.length - 1)];
-            console.log(rooms);
-            //console.log(usableRooms);
+      console.log(usableRoomsValues);
+      var canidate = maxIndices(usableRoomsValues);
+      canidate = canidate[random.int(0, canidate.length - 1)];
+      console.log(rooms);
+      //console.log(usableRooms);
 
-            var roomIndex = rooms.indexOf(usableRooms[canidate]);
-            console.log(
-                `roomIndex:${roomIndex}, canidate:${canidate}, person:${person}`,
-            );
-            rooms[roomIndex].push(personTrueIndex);
-            tempTable.drop({
-                index: [person],
-                inplace: true,
-            });
-            pushNum = 1;
-        }
+      var roomIndex = rooms.indexOf(usableRooms[canidate]);
+      console.log(
+        `roomIndex:${roomIndex}, canidate:${canidate}, person:${person}`
+      );
+      rooms[roomIndex].push(personTrueIndex);
+      tempTable.drop({
+        index: [person],
+        inplace: true,
+      });
+      pushNum = 1;
+    }
 
-        finalRooms = finalRooms.concat(rooms);
-    });
-    console.log(
-        finalRooms
-            .map((a) => a.length)
-            .reduce((a, b) => {
-                return a + b;
-            }),
-    );
+    finalRooms = finalRooms.concat(rooms);
+  });
+  console.log(
+    finalRooms
+      .map((a) => a.length)
+      .reduce((a, b) => {
+        return a + b;
+      })
+  );
 
-    console.log(finalRooms);
-    var download = URL.createObjectURL(
-        new Blob(
-            [
-                [
-                    "Results:\n",
-                    finalRooms
-                        .map((a) => {
-                            return a
-                                .map((b) => {
-                                    return peopleTable["Name"].values[b];
-                                })
-                                .join(", ");
-                        })
-                        .join("\n"),
-                ].join(""),
-            ],
-            { type: "text-plain" },
-        ),
-    );
-    const dlLink = document.createElement("a");
-    dlLink.href = download;
-    dlLink.download = "results.txt";
-    dlLink.click();
-    URL.revokeObjectURL(download);
-    console.log("done");
+  console.log(finalRooms);
+  var download = URL.createObjectURL(
+    new Blob(
+      [
+        [
+          "Results:\n",
+          finalRooms
+            .map((a) => {
+              return a
+                .map((b) => {
+                  return peopleTable["Name"].values[b];
+                })
+                .join(", ");
+            })
+            .join("\n"),
+        ].join(""),
+      ],
+      { type: "text-plain" }
+    )
+  );
+  const dlLink = document.createElement("a");
+  dlLink.href = download;
+  dlLink.download = "results.txt";
+  dlLink.click();
+  URL.revokeObjectURL(download);
+  console.log("done");
 }
 function startChooser() {
-    Object.assign(values, {});
-    personArray.splice(0, personArray.length);
-    console.log(`Array${personArray}`);
-    onClear();
-    if (
-        firstChoice.value != null &&
-        peoplePerRoom.value != null &&
-        !(peoplePerRoom.value < 2)
-    ) {
-        PopupVisible.value = false;
-        ParseRes.data.forEach((e: any, i: number) => {
-            var fullName = `${e[firstChoice.value]}`;
+  Object.assign(values, {});
+  personArray.splice(0, personArray.length);
+  console.log(`Array${personArray}`);
+  onClear();
+  if (
+    firstChoice.value != null &&
+    peoplePerRoom.value != null &&
+    !(peoplePerRoom.value < 2)
+  ) {
+    PopupVisible.value = false;
+    ParseRes.data.forEach((e: any, i: number) => {
+      var fullName = `${e[firstChoice.value]}`;
 
-            if (lastChoice.value != null) {
-                fullName += ` ${e[lastChoice.value]}`;
-            }
-            var personData = {
-                name: fullName,
-                id: i,
-            };
-            if (colSplitOps.value != null) {
-                personData["split"] = `${e[colSplitOps.value]}`;
-            }
-            personArray.push(personData);
-        });
-        ParseRes.data.forEach((e: any, i: number) => {
-            values[i] = {};
-            Array.from(
-                { length: peoplePerRoom.value + 1 },
-                (_, i) => i + 1,
-            ).forEach((a) => {
-                console.log(preSelectRooms.value);
-                if (!preSelectRooms.value) {
-                    console.log("Cancel1");
-                    values[i][a] = null;
-                    return;
-                }
-                if (preChosenCols.value[a - 1] == null) {
-                    console.log("Cancel2");
-                    values[i][a] = null;
-                    return;
-                }
-                var choiceFromPers = personArray
-                    .map((B) => B.name)
-                    .indexOf(
-                        ParseRes.data.map((b) => b[preChosenCols.value[a - 1]])[
-                            i
-                        ],
-                    );
-                console.log(choiceFromPers);
-                if (choiceFromPers == -1) {
-                    console.log("Cancel3");
-                    values[i][a] = null;
-                    return;
-                }
-                values[i][a] = choiceFromPers;
-            });
-        });
-        console.log(values);
-        console.log(personArray);
-        panelDisplay.value = [];
-        toRaw(personArray).forEach((e) => {
-            var newPanel: panelOptions = {};
-            newPanel.name = e.name;
-            newPanel.id = e.id;
-            newPanel.refOptions = values[newPanel.id];
-            var newPersonArray = structuredClone(toRaw(personArray)).filter(
-                (a) => {
-                    if (newPanel.id == a.id) {
-                        return false;
-                    }
-                    if (a.split == null) {
-                        return true;
-                    }
-                    if (a.split != e.split) {
-                        return false;
-                    }
-                    return true;
-                },
+      if (lastChoice.value != null) {
+        fullName += ` ${e[lastChoice.value]}`;
+      }
+      var personData = {
+        name: fullName,
+        id: i,
+      };
+      if (colSplitOps.value != null) {
+        personData["split"] = `${e[colSplitOps.value]}`;
+      }
+      personArray.push(personData);
+    });
+    ParseRes.data.forEach((e: any, i: number) => {
+      values[i] = {};
+      Array.from({ length: peoplePerRoom.value + 1 }, (_, i) => i + 1).forEach(
+        (a) => {
+          console.log(preSelectRooms.value);
+          if (!preSelectRooms.value) {
+            console.log("Cancel1");
+            values[i][a] = null;
+            return;
+          }
+          if (preChosenCols.value[a - 1] == null) {
+            console.log("Cancel2");
+            values[i][a] = null;
+            return;
+          }
+          var choiceFromPers = personArray
+            .map((B) => B.name)
+            .indexOf(
+              ParseRes.data.map((b) => b[preChosenCols.value[a - 1]])[i]
             );
-            newPersonArray = newPersonArray.map((a) => {
-                return { name: a.name, id: a.id };
-            });
-            newPersonArray.unshift({ name: "None", id: null });
-            newPanel.options = newPersonArray;
-            panelDisplay.value.push(newPanel);
-        });
-    }
+          console.log(choiceFromPers);
+          if (choiceFromPers == -1) {
+            console.log("Cancel3");
+            values[i][a] = null;
+            return;
+          }
+          values[i][a] = choiceFromPers;
+        }
+      );
+    });
+    console.log(values);
+    console.log(personArray);
+    panelDisplay.value = [];
+    toRaw(personArray).forEach((e) => {
+      var newPanel: panelOptions = {};
+      newPanel.name = e.name;
+      newPanel.id = e.id;
+      newPanel.refOptions = values[newPanel.id];
+      var newPersonArray = structuredClone(toRaw(personArray)).filter((a) => {
+        if (newPanel.id == a.id) {
+          return false;
+        }
+        if (a.split == null) {
+          return true;
+        }
+        if (a.split != e.split) {
+          return false;
+        }
+        return true;
+      });
+      newPersonArray = newPersonArray.map((a) => {
+        return { name: a.name, id: a.id };
+      });
+      newPersonArray.unshift({ name: "None", id: null });
+      newPanel.options = newPersonArray;
+      panelDisplay.value.push(newPanel);
+    });
+  }
 }
 console.log(personArray);
 watch(panelDisplay, (state) => {
-    localStorage.setItem("panelDisplay", JSON.stringify(state));
+  localStorage.setItem("panelDisplay", JSON.stringify(state));
 });
 watch(personArray, (state) => {
-    localStorage.setItem("personArray", JSON.stringify(state));
+  localStorage.setItem("personArray", JSON.stringify(state));
 });
 watch(peoplePerRoom, (state) => {
-    localStorage.setItem("peoplePerRoom", peoplePerRoom.value);
-    preChosenCols.value = new Array(peoplePerRoom.value + 1).fill(null);
+  localStorage.setItem("peoplePerRoom", peoplePerRoom.value);
+  preChosenCols.value = new Array(peoplePerRoom.value + 1).fill(null);
 });
 watch(values, (state) => {
-    localStorage.setItem("values", JSON.stringify(state));
+  localStorage.setItem("values", JSON.stringify(state));
 });
 </script>
 
 <template>
-    <Menubar :model="navItems" breakpoint="640px">
-        <template #start>
-            <FileUpload
-                mode="basic"
-                name="demo[]"
-                accept=".csv"
-                @select="onFileSelect"
-                :auto="true"
-                chooseLabel="Upload Person Sheet"
-                chooseIcon="pi pi-file-import"
-                customUpload
-            />
-        </template>
-    </Menubar>
-    <img
-        v-if="src"
-        :src="src"
-        alt="Image"
-        class="shadow-md rounded-xl w-full sm:w-64"
-        style="filter: grayscale(100%)"
+  <Menubar :model="navItems" breakpoint="640px">
+    <template #start>
+      <FileUpload
+        mode="basic"
+        name="demo[]"
+        accept=".csv"
+        @select="onFileSelect"
+        :auto="true"
+        chooseLabel="Upload Person Sheet"
+        chooseIcon="pi pi-file-import"
+        customUpload
+      />
+    </template>
+  </Menubar>
+  <img
+    v-if="src"
+    :src="src"
+    alt="Image"
+    class="shadow-md rounded-xl w-full sm:w-64"
+    style="filter: grayscale(100%)"
+  />
+  <Dialog modal v-model:visible="PopupVisible" header="Configure Names">
+    <Select
+      v-model="firstChoice"
+      :options="colOps"
+      :invalid="firstChoice === null"
+      placeholder="First Names *"
     />
-    <Dialog modal v-model:visible="PopupVisible" header="Configure Names">
-        <Select
-            v-model="firstChoice"
-            :options="colOps"
-            :invalid="firstChoice === null"
-            placeholder="First Names *"
-        />
-        <Select
-            v-model="lastChoice"
-            :options="colOps"
-            placeholder="Last Names"
-        />
-        <Select
-            v-model="colSplitOps"
-            :options="colOps"
-            placeholder="Column to Seperate Rooms"
-        />
-        <InputNumber
-            v-model="peoplePerRoom"
-            :invalid="peoplePerRoom === null"
-            showButtons
-            :min="2"
-            placeholder="People Per Room*"
-        />
+    <Select v-model="lastChoice" :options="colOps" placeholder="Last Names" />
+    <Select
+      v-model="colSplitOps"
+      :options="colOps"
+      placeholder="Column to Seperate Rooms"
+    />
+    <InputNumber
+      v-model="peoplePerRoom"
+      :invalid="peoplePerRoom === null"
+      showButtons
+      :min="2"
+      placeholder="People Per Room*"
+    />
 
-        <div>
-            <Checkbox v-model="preSelectRooms" binary></Checkbox
-            ><label>Rooms Already Chosen</label>
-        </div>
-        <Panel v-if="preSelectRooms" header="Columns for Choices">
-            <Select
-                v-for="(c, i) in preChosenCols.value"
-                :options="colOps"
-                v-model="preChosenCols.value[i]"
-                :placeholder="`Choice ${i + 1}`"
-            >
-            </Select>
-        </Panel>
-        <Button label="Start " @click="startChooser" />
-    </Dialog>
-    <Panel v-for="panel in panelDisplay" :header="panel.name">
-        <Select
-            v-for="(ee, i) in panel.refOptions"
-            v-model="values[panel.id][i]"
-            placeholder="Select One"
-            :options="panel.options"
-            optionLabel="name"
-            optionValue="id"
-        />
+    <div>
+      <Checkbox v-model="preSelectRooms" binary></Checkbox
+      ><label>Rooms Already Chosen</label>
+    </div>
+    <Panel v-if="preSelectRooms" header="Columns for Choices">
+      <Select
+        v-for="(c, i) in preChosenCols.value"
+        :options="colOps"
+        v-model="preChosenCols.value[i]"
+        :placeholder="`Choice ${i + 1}`"
+      >
+      </Select>
     </Panel>
-    <Button label="Submit" v-if="panelDisplay.length > 0" @click="onSubmit" />
+    <Button label="Start " @click="startChooser" />
+  </Dialog>
+  <Panel v-for="panel in panelDisplay" :header="panel.name">
+    <Select
+      v-for="(ee, i) in panel.refOptions"
+      v-model="values[panel.id][i]"
+      placeholder="Select One"
+      :options="panel.options"
+      optionLabel="name"
+      optionValue="id"
+    />
+  </Panel>
+  <Button label="Submit" v-if="panelDisplay.length > 0" @click="onSubmit" />
 </template>
